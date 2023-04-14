@@ -38,7 +38,7 @@ function Source._do_complete(self, ctx, callback)
   local before = table.concat(lines_before, '\n')
 
   local req = {
-    languate = (vim.filetype.match({ buf = 0 }) or ''),
+    -- language = (vim.filetype.match({ buf = 0 }) or ''),
     prompt = before,
   }
   -- local res = curl.post(conf:get('host') .. '/v1/engines/codegen/completions', {
