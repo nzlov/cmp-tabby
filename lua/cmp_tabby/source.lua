@@ -121,8 +121,8 @@ function Source._do_complete(self, ctx, callback)
   })
 end
 
---- resolve
-function Source.resolve(self, item, callback)
+--- execute
+function Source.execute(self, item, callback)
   -- dump(item)
   local req = {
     type = 'completion',
@@ -145,6 +145,7 @@ function Source.resolve(self, item, callback)
   }, {
     on_stdout = function(_, c, _) end,
   })
+  callback(item)
 end
 
 --- complete
