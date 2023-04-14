@@ -38,6 +38,7 @@ function Source._do_complete(self, ctx, callback)
   local before = table.concat(lines_before, '\n')
 
   local req = {
+    languate = (vim.filetype.match({ buf = 0 }) or ''),
     prompt = before,
   }
   -- local res = curl.post(conf:get('host') .. '/v1/engines/codegen/completions', {
@@ -46,6 +47,8 @@ function Source._do_complete(self, ctx, callback)
   --     content_type = 'application/json',
   --   },
   -- })
+
+  -- dump(req)
 
   self.job = fn.jobstart({
     'curl',
@@ -143,7 +146,9 @@ function Source.execute(self, item, callback)
     vim.json.encode(req),
     conf:get('host') .. '/v1/events',
   }, {
-    on_stdout = function(_, c, _) end,
+    on_stdout = function(_, c, _)
+      -- dump(c)
+    end,
   })
   callback(item)
 end
