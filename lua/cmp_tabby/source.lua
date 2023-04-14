@@ -123,13 +123,13 @@ end
 
 --- resolve
 function Source.resolve(self, item, callback)
-  dump(item)
+  -- dump(item)
   local req = {
     type = 'completion',
     completion_id = item.data.id,
     choice_index = item.data.choice,
   }
-  dump(vim.json.encode(req))
+  -- dump(vim.json.encode(req))
   fn.jobstart({
     'curl',
     '-s',
