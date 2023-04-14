@@ -128,7 +128,7 @@ end
 function Source.execute(self, item, callback)
   -- dump(item)
   local req = {
-    type = 'completion',
+    type = 'select',
     completion_id = item.data.id,
     choice_index = item.data.choice,
   }
