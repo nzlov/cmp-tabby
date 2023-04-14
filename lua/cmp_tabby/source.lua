@@ -32,15 +32,10 @@ function Source._do_complete(self, ctx, callback)
   local cursor = ctx.context.cursor
   local cur_line = ctx.context.cursor_line
   local cur_line_before = string.sub(cur_line, 1, cursor.col - 1)
-  local cur_line_after = string.sub(cur_line, cursor.col) -- include current character
 
   local lines_before = api.nvim_buf_get_lines(0, math.max(0, cursor.line - max_lines), cursor.line, false)
   table.insert(lines_before, cur_line_before)
   local before = table.concat(lines_before, '\n')
-
-  local lines_after = api.nvim_buf_get_lines(0, cursor.line + 1, cursor.line + max_lines, false)
-  table.insert(lines_after, 1, cur_line_after)
-  local after = table.concat(lines_after, '\n')
 
   local req = {
     prompt = before,
@@ -71,23 +66,27 @@ function Source._do_complete(self, ctx, callback)
         if res ~= nil and res ~= '' and res ~= 'null' then
           local data = (vim.json.decode(res) or {})
           for _, result in ipairs(data.choices) do
-            local newText = result.text
+            local newText = result.text:gsub('<|endoftext|>', '')
 
             if newText:find('.*\n.*') then
               -- this is a multi line completion.
               -- remove leading newlines
               newText = newText:gsub('^\n', '')
             end
+
             local range = {
               start = { line = cursor.line, character = cursor.col },
               ['end'] = { line = cursor.line, character = cursor.col },
             }
 
             local item = {
-              label = cur_line_before .. newText,
+              label = newText,
               -- removing filterText, as it interacts badly with multiline
               -- filterText = newText,
-              data = result,
+              data = {
+                id = data.id,
+                choice = result.index,
+              },
               textEdit = {
                 newText = newText,
                 insert = range, -- May be better to exclude the trailing part of old_suffix since it's 'replaced'?
@@ -105,10 +104,6 @@ function Source._do_complete(self, ctx, callback)
             }
             if result.text:find('.*\n.*') then
               item['data']['multiline'] = true
-              item['documentation'] = {
-                kind = cmp.lsp.MarkupKind.Markdown,
-                value = '```' .. (vim.filetype.match({ buf = 0 }) or '') .. '\n' .. newText .. '\n```',
-              }
             end
             table.insert(items, item)
           end
@@ -123,6 +118,32 @@ function Source._do_complete(self, ctx, callback)
         end
       end
     end,
+  })
+end
+
+--- resolve
+function Source.resolve(self, item, callback)
+  dump(item)
+  local req = {
+    type = 'completion',
+    completion_id = item.data.id,
+    choice_index = item.data.choice,
+  }
+  dump(vim.json.encode(req))
+  fn.jobstart({
+    'curl',
+    '-s',
+    '-H',
+    'Content-type: application/json',
+    '-H',
+    'Accept: application/json',
+    '-X',
+    'POST',
+    '-d',
+    vim.json.encode(req),
+    conf:get('host') .. '/v1/events',
+  }, {
+    on_stdout = function(_, c, _) end,
   })
 end
 
