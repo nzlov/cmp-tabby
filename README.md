@@ -15,7 +15,7 @@ Plug 'nzlov/cmp-tabby'
 Using plug on windows:
 
 ```viml
-Plug 'tzachar/cmp-tabby'
+Plug 'nzlov/cmp-tabby'
 ```
 
 Using [Lazy](https://github.com/folke/lazy.nvim/):
