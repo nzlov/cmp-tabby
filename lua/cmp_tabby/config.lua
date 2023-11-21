@@ -3,6 +3,7 @@ local M = {}
 local conf_defaults = {
   host = 'http://localhost:5000',
   max_lines = 100,
+  run_on_every_keystroke = true,
   stop = { '\n' },
 }
 

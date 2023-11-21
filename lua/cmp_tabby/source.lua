@@ -24,7 +24,7 @@ function Source.is_available(self)
 end
 
 function Source.get_debug_name()
-  return 'tabby'
+  return 'Tabby'
 end
 
 function Source._do_complete(self, ctx, callback)
@@ -107,7 +107,7 @@ function Source._do_complete(self, ctx, callback)
             }
 
             local item = {
-              label = newText,
+              label = cur_line_before .. newText,
               -- removing filterText, as it interacts badly with multiline
               -- filterText = newText,
               data = {
@@ -122,7 +122,7 @@ function Source._do_complete(self, ctx, callback)
               sortText = newText,
               dup = 0,
               cmp = {
-                kind_text = 'tabby',
+                kind_text = 'Tabby',
               },
               documentation = {
                 kind = cmp.lsp.MarkupKind.Markdown,
@@ -133,6 +133,7 @@ function Source._do_complete(self, ctx, callback)
               item['data']['multiline'] = true
             end
             table.insert(items, item)
+            self:view(item)
           end
         end
       end
@@ -144,6 +145,34 @@ function Source._do_complete(self, ctx, callback)
           })
         end
       end
+    end,
+  })
+end
+
+--- view
+function Source.view(self, item)
+  -- dump(item)
+  local req = {
+    type = 'view',
+    completion_id = item.data.id,
+    choice_index = item.data.choice,
+  }
+  -- dump(vim.json.encode(req))
+  fn.jobstart({
+    'curl',
+    '-s',
+    '-H',
+    'Content-type: application/json',
+    '-H',
+    'Accept: application/json',
+    '-X',
+    'POST',
+    '-d',
+    vim.json.encode(req),
+    conf:get('host') .. '/v1/events',
+  }, {
+    on_stdout = function(_, c, _)
+      -- dump(c)
     end,
   })
 end
