@@ -31,15 +31,38 @@ function Source._do_complete(self, ctx, callback)
   local max_lines = conf:get('max_lines')
   local cursor = ctx.context.cursor
   local cur_line = ctx.context.cursor_line
-  local cur_line_before = string.sub(cur_line, 1, cursor.col - 1)
+
+  -- properly handle utf8
+  -- local cur_line_before = string.sub(cur_line, 1, cursor.col - 1)
+  local cur_line_before = vim.fn.strpart(cur_line, 0, math.max(cursor.col - 1, 0), true)
+
+  -- properly handle utf8
+  -- local cur_line_after = string.sub(cur_line, cursor.col) -- include current character
+  local cur_line_after = vim.fn.strpart(cur_line, math.max(cursor.col - 1, 0), vim.fn.strdisplaywidth(cur_line), true) -- include current character
+
+  local region_includes_beginning = false
+  local region_includes_end = false
+  if cursor.line - max_lines <= 1 then
+    region_includes_beginning = true
+  end
+  if cursor.line + max_lines >= fn['line']('$') then
+    region_includes_end = true
+  end
 
   local lines_before = api.nvim_buf_get_lines(0, math.max(0, cursor.line - max_lines), cursor.line, false)
   table.insert(lines_before, cur_line_before)
   local before = table.concat(lines_before, '\n')
 
+  local lines_after = api.nvim_buf_get_lines(0, cursor.line + 1, cursor.line + max_lines, false)
+  table.insert(lines_after, 1, cur_line_after)
+  local after = table.concat(lines_after, '\n')
+
   local req = {
-    -- language = (vim.filetype.match({ buf = 0 }) or ''),
-    prompt = before,
+    language = (vim.filetype.match({ buf = 0 }) or ''),
+    segments = {
+      prefix = before,
+      suffix = after,
+    },
   }
   -- local res = curl.post(conf:get('host') .. '/v1/engines/codegen/completions', {
   --   body = vim.fn.json_encode(req),
@@ -64,6 +87,7 @@ function Source._do_complete(self, ctx, callback)
     conf:get('host') .. '/v1/completions',
   }, {
     on_stdout = function(_, c, _)
+      -- dump(c)
       local items = {}
       for _, res in ipairs(c) do
         if res ~= nil and res ~= '' and res ~= 'null' then
